@@ -1,3 +1,4 @@
+.settings/
 build/
-SliderDemo.jar
-SliderDemo.zip
+*.jar
+*.zip
