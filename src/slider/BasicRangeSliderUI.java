@@ -203,7 +203,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 			if (slider.isEnabled())
 				g.setColor(rangeColor);
 			else
-				g.setColor(new Color(0, 127, 0));
+				g.setColor(rangeColor.darker());
 			for (int y = 0; y <= 3; y++) {
 				g.drawLine(lowerX - trackBounds.x, y, upperX - trackBounds.x, y);
 			}
@@ -215,8 +215,8 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		} else {
 			// Determine position of selected range by moving from the middle
 			// of one thumb to the other.
-			int lowerY = thumbRect.x + (thumbRect.width / 2);
-			int upperY = upperThumbRect.x + (upperThumbRect.width / 2);
+			int lowerY = thumbRect.y + (thumbRect.height / 2);
+			int upperY = upperThumbRect.y + (upperThumbRect.height / 2);
 
 			// Determine track position.
 			int cx = (trackBounds.width / 2) - 2;
@@ -229,7 +229,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 			if (slider.isEnabled())
 				g.setColor(rangeColor);
 			else
-				g.setColor(new Color(0, 127, 0));
+				g.setColor(rangeColor.darker());
 			for (int x = 0; x <= 3; x++) {
 				g.drawLine(x, lowerY - trackBounds.y, x, upperY - trackBounds.y);
 			}

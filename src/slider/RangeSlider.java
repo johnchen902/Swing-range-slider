@@ -26,7 +26,20 @@ public class RangeSlider extends JSlider {
 	private static final String uiClassID = "RangeSliderUI";
 
 	static {
-		UIManager.put(uiClassID, "slider.BasicRangeSliderUI");
+		if (UIManager.get(uiClassID) == null)
+			guessAndSetDefaultUI();
+	}
+
+	/**
+	 * Guess and set the default UI delegation of this RangeSlider from the
+	 * current L&F.
+	 */
+	public static void guessAndSetDefaultUI() {
+		String lafName = UIManager.getLookAndFeel().getClass().getName();
+		if (lafName.contains("Metal"))
+			UIManager.put(uiClassID, "slider.MetalRangeSliderUI");
+		else
+			UIManager.put(uiClassID, "slider.BasicRangeSliderUI");
 	}
 
 	/**
@@ -60,6 +73,7 @@ public class RangeSlider extends JSlider {
 	 * @see JComponent#getUIClassID
 	 * @see UIDefaults#getUI
 	 */
+	@Override
 	public String getUIClassID() {
 		return uiClassID;
 	}
