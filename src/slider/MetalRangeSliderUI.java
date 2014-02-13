@@ -117,6 +117,12 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 		}
 	}
 
+	private static final String ICON_FACTORY = "javax.swing.plaf.metal.MetalIconFactory$";
+	private static final String OCEAN_HORIZONTAL = ICON_FACTORY
+			+ "OceanHorizontalSliderThumbIcon";
+	private static final String OCEAN_VERTICAL = ICON_FACTORY
+			+ "OceanVerticalSliderThumbIcon";
+
 	@Override
 	public void paintThumb(Graphics g) {
 		Rectangle knobBounds = thumbRect;
@@ -130,10 +136,16 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 			icon = getVertThumbIcon();
 		}
 
-		final String PATTERN = "javax\\.swing\\.plaf\\.metal\\.MetalIconFactory\\$.*SliderThumbIcon";
-		if (icon.getClass().getName().matches(PATTERN)) {
+		if (icon.getClass().getName().equals(OCEAN_HORIZONTAL)) {
 			sun.swing.CachedPainter p = (CachedPainter) icon;
 			p.paint(slider, g, 0, 0, icon.getIconWidth(), icon.getIconHeight(),
+					slider.hasFocus()
+							&& (paintingUpperThumb == upperThumbSelected),
+					slider.isEnabled(), MetalLookAndFeel.getCurrentTheme());
+		} else if (icon.getClass().getName().equals(OCEAN_VERTICAL)) {
+			sun.swing.CachedPainter p = (CachedPainter) icon;
+			p.paint(slider, g, 0, 0, icon.getIconWidth(), icon.getIconHeight(),
+					slider.getComponentOrientation().isLeftToRight(),
 					slider.hasFocus()
 							&& (paintingUpperThumb == upperThumbSelected),
 					slider.isEnabled(), MetalLookAndFeel.getCurrentTheme());
@@ -394,6 +406,10 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 		}
 
 		g.translate(-paintRect.x, -paintRect.y);
+	}
+
+	@Override
+	public void paintFocus(Graphics g) {
 	}
 
 	@Override

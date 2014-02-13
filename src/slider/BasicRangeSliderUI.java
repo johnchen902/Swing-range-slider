@@ -188,8 +188,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 	}
 
 	/**
-	 * Paints the slider. The selected thumb is always painted on top of the
-	 * other thumb.
+	 * Paints the slider.
 	 */
 	@Override
 	public void paint(Graphics g, JComponent c) {
@@ -213,6 +212,13 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		// Draw track.
 		super.paintTrack(g);
 
+		paintTrackHighlight(g);
+	}
+
+	/**
+	 * Paints the track highlight between the two thumbs.
+	 */
+	protected void paintTrackHighlight(Graphics g) {
 		Rectangle trackBounds = trackRect;
 
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
@@ -270,10 +276,6 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 	}
 
 	@Override
-	public void paintFocus(Graphics g) {
-	}
-
-	@Override
 	public void paintThumb(Graphics g) {
 		super.paintThumb(g);
 		if (slider.hasFocus() && (paintingUpperThumb == upperThumbSelected)) {
@@ -313,7 +315,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		}
 	}
 
-	protected void scrollByDelta(int delta) {
+	private void scrollByDelta(int delta) {
 		if (upperThumbSelected) {
 			int oldValue = ((RangeSlider) slider).getUpperValue();
 			if (slider.getExtent() + delta >= 0) {

@@ -35,9 +35,11 @@ public class RangeSlider extends JSlider {
 	 * current L&F.
 	 */
 	public static void guessAndSetDefaultUI() {
-		String lafName = UIManager.getLookAndFeel().getClass().getName();
-		if (lafName.contains("Metal"))
+		String lafName = UIManager.getLookAndFeel().getID();
+		if (lafName.equals("Metal"))
 			UIManager.put(uiClassID, "slider.MetalRangeSliderUI");
+		else if (lafName.equals("Windows"))
+			UIManager.put(uiClassID, "slider.WindowsRangeSliderUI");
 		else
 			UIManager.put(uiClassID, "slider.BasicRangeSliderUI");
 	}
