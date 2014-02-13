@@ -3,15 +3,21 @@ package slider;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JSlider;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.plaf.basic.BasicSliderUI;
 
 /**
@@ -22,7 +28,9 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 
 	protected Rectangle upperThumbRect;
 
-	private boolean upperThumbSelected;
+	protected boolean upperThumbSelected;
+
+	protected boolean paintingUpperThumb;
 
 	protected Color rangeColor;
 
@@ -49,7 +57,9 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 	@Override
 	public void installUI(JComponent c) {
 		upperThumbRect = new Rectangle();
+		upperThumbSelected = true;
 		super.installUI(c);
+		slider.setFocusTraversalKeysEnabled(false);
 	}
 
 	@Override
@@ -58,6 +68,23 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		rangeColor = UIManager.getColor("RangeSlider.range");
 		if (rangeColor == null)
 			rangeColor = Color.GREEN;
+	}
+
+	@Override
+	protected void installKeyboardActions(JSlider slider) {
+		super.installKeyboardActions(slider);
+		InputMap im = slider.getInputMap();
+		im.put(KeyStroke.getKeyStroke("pressed TAB"), "tab");
+		im.put(KeyStroke.getKeyStroke("shift pressed TAB"), "shifttab");
+		im.put(KeyStroke.getKeyStroke("ctrl pressed TAB"), "ctrltab");
+		im.put(KeyStroke.getKeyStroke("ctrl shift pressed TAB"), "ctrlshifttab");
+		ActionMap ac = slider.getActionMap();
+		ac.put("tab", new TabActions(false, false));
+		ac.put("shifttab", new TabActions(false, true));
+		ac.put("ctrltab", new TabActions(true, false));
+		ac.put("ctrlshifttab", new TabActions(true, true));
+		ac.put(MinMaxAction.MIN_SCROLL_INCREMENT, new MinMaxAction(true));
+		ac.put(MinMaxAction.MAX_SCROLL_INCREMENT, new MinMaxAction(false));
 	}
 
 	/**
@@ -166,11 +193,13 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 	 */
 	@Override
 	public void paint(Graphics g, JComponent c) {
+		paintingUpperThumb = false;
 		super.paint(g, c);
 
 		Rectangle clipRect = g.getClipBounds();
 		if (clipRect.intersects(upperThumbRect)) {
 			swapThumbRects();
+			paintingUpperThumb = true;
 			paintThumb(g);
 			swapThumbRects();
 		}
@@ -241,6 +270,20 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 	}
 
 	@Override
+	public void paintFocus(Graphics g) {
+	}
+
+	@Override
+	public void paintThumb(Graphics g) {
+		super.paintThumb(g);
+		if (slider.hasFocus() && (paintingUpperThumb == upperThumbSelected)) {
+			g.setColor(getFocusColor());
+			BasicGraphicsUtils.drawDashedRect(g, thumbRect.x, thumbRect.y,
+					thumbRect.width, thumbRect.height);
+		}
+	}
+
+	@Override
 	public void setThumbLocation(int x, int y) {
 		if (upperThumbSelected) {
 			setUpperThumbLocation(x, y);
@@ -260,6 +303,38 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 				upperThumbRect.width, upperThumbRect.height, upperUnionRect);
 		slider.repaint(upperUnionRect.x, upperUnionRect.y,
 				upperUnionRect.width, upperUnionRect.height);
+	}
+
+	protected void setUpperThumbSelected(boolean upperThumbSelected) {
+		if (this.upperThumbSelected != upperThumbSelected) {
+			this.upperThumbSelected = upperThumbSelected;
+			slider.repaint(thumbRect);
+			slider.repaint(upperThumbRect);
+		}
+	}
+
+	protected void scrollByDelta(int delta) {
+		if (upperThumbSelected) {
+			int oldValue = ((RangeSlider) slider).getUpperValue();
+			if (slider.getExtent() + delta >= 0) {
+				((RangeSlider) slider).setUpperValue(oldValue + delta);
+			} else {
+				int oldLowerValue = slider.getValue();
+				slider.setValue(oldValue + delta);
+				((RangeSlider) slider).setUpperValue(oldLowerValue);
+				setUpperThumbSelected(!upperThumbSelected);
+			}
+		} else {
+			int oldValue = slider.getValue();
+			if (delta <= slider.getExtent()) {
+				slider.setValue(oldValue + delta);
+			} else {
+				int oldUpperValue = slider.getValue();
+				((RangeSlider) slider).setUpperValue(oldValue + delta);
+				slider.setValue(oldUpperValue);
+				setUpperThumbSelected(!upperThumbSelected);
+			}
+		}
 	}
 
 	/**
@@ -285,15 +360,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 			int delta = blockIncrement
 					* ((direction > 0) ? POSITIVE_SCROLL : NEGATIVE_SCROLL);
 
-			int oldLowerValue = slider.getValue();
-			int oldUpperValue = ((RangeSlider) slider).getUpperValue();
-			if (delta < 0) {
-				slider.setValue(oldLowerValue + delta);
-				((RangeSlider) slider).setUpperValue(oldUpperValue + delta);
-			} else {
-				((RangeSlider) slider).setUpperValue(oldUpperValue + delta);
-				slider.setValue(oldLowerValue + delta);
-			}
+			scrollByDelta(delta);
 		}
 	}
 
@@ -310,15 +377,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 				delta *= getTickSpacing();
 			}
 
-			int oldLowerValue = slider.getValue();
-			int oldUpperValue = ((RangeSlider) slider).getUpperValue();
-			if (delta < 0) {
-				slider.setValue(oldLowerValue + delta);
-				((RangeSlider) slider).setUpperValue(oldUpperValue + delta);
-			} else {
-				((RangeSlider) slider).setUpperValue(oldUpperValue + delta);
-				slider.setValue(oldLowerValue + delta);
-			}
+			scrollByDelta(delta);
 		}
 	}
 
@@ -370,7 +429,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 					return;
 				}
 
-				upperThumbSelected = inUpper;
+				setUpperThumbSelected(inUpper);
 
 				Rectangle rect;
 				if (upperThumbSelected)
@@ -506,6 +565,57 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 				} else {
 					slider.setValue(newValue);
 				}
+			}
+		}
+	}
+
+	@SuppressWarnings("serial")
+	protected class TabActions extends AbstractAction {
+		protected final boolean control;
+		protected final boolean shift;
+
+		public TabActions(boolean control, boolean shift) {
+			this.control = control;
+			this.shift = shift;
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if (!slider.isEnabled())
+				return;
+			if (isDragging)
+				return;
+			if (control) {
+				if (shift)
+					slider.transferFocusBackward();
+				else
+					slider.transferFocus();
+			} else {
+				setUpperThumbSelected(!upperThumbSelected);
+			}
+		}
+	}
+
+	@SuppressWarnings("serial")
+	protected class MinMaxAction extends AbstractAction {
+		public static final String MIN_SCROLL_INCREMENT = "minScroll";
+		public static final String MAX_SCROLL_INCREMENT = "maxScroll";
+
+		private boolean isMin;
+
+		protected MinMaxAction(boolean isMin) {
+			this.isMin = isMin;
+		}
+
+		@Override
+		public void actionPerformed(ActionEvent evt) {
+			boolean isMin = this.isMin ^ slider.getInverted();
+			if (upperThumbSelected) {
+				((RangeSlider) slider).setUpperValue(isMin ? slider.getValue()
+						: slider.getMaximum());
+			} else {
+				slider.setValue(isMin ? slider.getMinimum()
+						: ((RangeSlider) slider).getUpperValue());
 			}
 		}
 	}

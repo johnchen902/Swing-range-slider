@@ -12,9 +12,12 @@ import javax.swing.JComponent;
 import javax.swing.JSlider;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.MetalSliderUI;
 import javax.swing.plaf.metal.OceanTheme;
+
+import sun.swing.CachedPainter;
 
 /**
  * A Java L&F UI delegation of RangeSlider.
@@ -120,10 +123,27 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 
 		g.translate(knobBounds.x, knobBounds.y);
 
+		Icon icon;
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
-			getHorizThumbIcon().paintIcon(slider, g, 0, 0);
+			icon = getHorizThumbIcon();
 		} else {
-			getVertThumbIcon().paintIcon(slider, g, 0, 0);
+			icon = getVertThumbIcon();
+		}
+
+		final String PATTERN = "javax\\.swing\\.plaf\\.metal\\.MetalIconFactory\\$.*SliderThumbIcon";
+		if (icon.getClass().getName().matches(PATTERN)) {
+			sun.swing.CachedPainter p = (CachedPainter) icon;
+			p.paint(slider, g, 0, 0, icon.getIconWidth(), icon.getIconHeight(),
+					slider.hasFocus()
+							&& (paintingUpperThumb == upperThumbSelected),
+					slider.isEnabled(), MetalLookAndFeel.getCurrentTheme());
+		} else {
+			icon.paintIcon(slider, g, 0, 0);
+			if (slider.hasFocus() && (paintingUpperThumb == upperThumbSelected)) {
+				g.setColor(getFocusColor());
+				BasicGraphicsUtils.drawDashedRect(g, 0, 0, thumbRect.width,
+						thumbRect.height);
+			}
 		}
 
 		g.translate(-knobBounds.x, -knobBounds.y);
@@ -374,10 +394,6 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 		}
 
 		g.translate(-paintRect.x, -paintRect.y);
-	}
-
-	@Override
-	public void paintFocus(Graphics g) {
 	}
 
 	@Override
