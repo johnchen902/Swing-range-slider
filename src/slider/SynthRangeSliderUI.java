@@ -56,6 +56,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 
 	private SynthStyle style;
 	private SynthStyle sliderTrackStyle;
+	private SynthStyle sliderRangeTrackStyle;
 	private SynthStyle sliderThumbStyle;
 
 	/** Used to determine the color to paint the thumb. */
@@ -107,6 +108,10 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		context = getContext(slider, Region.SLIDER_TRACK, ENABLED);
 		sliderTrackStyle.uninstallDefaults(context);
 		sliderTrackStyle = null;
+
+		context = getContext(slider, SliderRangeTrackRegion.INSTANCE, ENABLED);
+		sliderRangeTrackStyle.uninstallDefaults(context);
+		sliderRangeTrackStyle = null;
 
 		context = getContext(slider, Region.SLIDER_THUMB, ENABLED);
 		sliderThumbStyle.uninstallDefaults(context);
@@ -172,6 +177,10 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 
 		context = getStyleUpdatedContext(c, Region.SLIDER_TRACK, ENABLED, this);
 		sliderTrackStyle = context.getStyle();
+
+		context = getStyleUpdatedContext(c, SliderRangeTrackRegion.INSTANCE,
+				ENABLED, this);
+		sliderRangeTrackStyle = context.getStyle();
 
 		context = getStyleUpdatedContext(c, Region.SLIDER_THUMB, ENABLED, this);
 		sliderThumbStyle = context.getStyle();
@@ -325,6 +334,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		calculateThumbSize();
 		layout();
 		calculateThumbLocation();
+		calculateRangeTrackRect();
 	}
 
 	/**
@@ -717,6 +727,8 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 
 		if (subregion == Region.SLIDER_TRACK) {
 			style = sliderTrackStyle;
+		} else if (subregion == SliderRangeTrackRegion.INSTANCE) {
+			style = sliderRangeTrackStyle;
 		} else if (subregion == Region.SLIDER_THUMB) {
 			style = sliderThumbStyle;
 		} else {
@@ -850,6 +862,12 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 			paintTrack(subcontext, g, trackRect);
 		}
 
+		if (slider.getPaintTrack() && clip.intersects(rangeTrackRect)) {
+			SynthContext subcontext = getContext(slider,
+					SliderRangeTrackRegion.INSTANCE);
+			paintTrack(subcontext, g, rangeTrackRect);
+		}
+
 		if (clip.intersects(thumbRect)) {
 			paintingUpperThumb = false;
 			SynthContext subcontext = getContext(slider, Region.SLIDER_THUMB);
@@ -923,7 +941,6 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		getPainter(context).paintSliderTrackBorder(context, g, trackBounds.x,
 				trackBounds.y, trackBounds.width, trackBounds.height,
 				orientation);
-		super.paintTrackHighlight(g);
 	}
 
 	/**

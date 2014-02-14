@@ -237,43 +237,87 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 					(trackBottom - trackTop) - 1);
 		}
 
+		g.translate(-trackRect.x, -trackRect.y);
+	}
+
+	private void oceanPaintTrack(Graphics g) {
+		// Translate to the origin of the painting rectangle
+		Rectangle paintRect = getPaintTrackRect();
+		g.translate(paintRect.x, paintRect.y);
+
+		// Width and height of the painting rectangle.
+		int w = paintRect.width;
+		int h = paintRect.height;
+
+		if (slider.getOrientation() == JSlider.HORIZONTAL) {
+			if (slider.isEnabled()) {
+				g.setColor(MetalLookAndFeel.getControlDarkShadow());
+			} else {
+				g.setColor(MetalLookAndFeel.getControlShadow());
+			}
+			g.drawRect(0, 0, w - 1, h - 1);
+		} else {
+			if (slider.isEnabled()) {
+				g.setColor(MetalLookAndFeel.getControlDarkShadow());
+			} else {
+				g.setColor(MetalLookAndFeel.getControlShadow());
+			}
+			g.drawRect(0, 0, w - 1, h - 1);
+		}
+
+		g.translate(-paintRect.x, -paintRect.y);
+	}
+
+	@Override
+	protected void paintRangeTrack(Graphics g) {
+		if (MetalLookAndFeel.getCurrentTheme() instanceof OceanTheme) {
+			oceanPaintRangeTrack(g);
+			return;
+		}
+
+		g.translate(rangeTrackRect.x, rangeTrackRect.y);
+
+		int trackLeft = 0;
+		int trackTop = 0;
+		int trackRight;
+		int trackBottom;
+
+		// Draw the track
+		if (slider.getOrientation() == JSlider.HORIZONTAL) {
+			trackBottom = (rangeTrackRect.height - 1) - getThumbOverhang();
+			trackTop = trackBottom - (getTrackWidth() - 1);
+			trackRight = rangeTrackRect.width - 1;
+		} else {
+			if (slider.getComponentOrientation().isLeftToRight()) {
+				trackLeft = (rangeTrackRect.width - getThumbOverhang())
+						- getTrackWidth();
+				trackRight = (rangeTrackRect.width - getThumbOverhang()) - 1;
+			} else {
+				trackLeft = getThumbOverhang();
+				trackRight = getThumbOverhang() + getTrackWidth() - 1;
+			}
+			trackBottom = rangeTrackRect.height - 1;
+		}
+
 		// Draw the fill
 		if (filledSlider) {
-			int middleOfThumb;
-			int middleOfUpperThumb;
 			int fillTop;
 			int fillLeft;
 			int fillBottom;
 			int fillRight;
 
 			if (slider.getOrientation() == JSlider.HORIZONTAL) {
-				middleOfThumb = thumbRect.x + (thumbRect.width / 2);
-				middleOfThumb -= trackRect.x;
-
-				middleOfUpperThumb = upperThumbRect.x
-						+ (upperThumbRect.width / 2);
-				middleOfUpperThumb -= trackRect.x;
-
 				fillTop = !slider.isEnabled() ? trackTop : trackTop + 1;
 				fillBottom = !slider.isEnabled() ? trackBottom - 1
 						: trackBottom - 2;
-
-				fillLeft = Math.min(middleOfThumb, middleOfUpperThumb);
-				fillRight = Math.max(middleOfThumb, middleOfUpperThumb);
+				fillLeft = 0;
+				fillRight = rangeTrackRect.width;
 			} else {
-				middleOfThumb = thumbRect.y + (thumbRect.height / 2);
-				middleOfThumb -= trackRect.y;
-
-				middleOfUpperThumb = upperThumbRect.y
-						+ (upperThumbRect.height / 2);
-				middleOfUpperThumb -= trackRect.y;
-
 				fillLeft = !slider.isEnabled() ? trackLeft : trackLeft + 1;
 				fillRight = !slider.isEnabled() ? trackRight - 1
 						: trackRight - 2;
-
-				fillTop = Math.min(middleOfThumb, middleOfUpperThumb);
-				fillBottom = Math.max(middleOfThumb, middleOfUpperThumb);
+				fillTop = 0;
+				fillBottom = rangeTrackRect.height;
 			}
 
 			if (slider.isEnabled()) {
@@ -291,10 +335,10 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 			}
 		}
 
-		g.translate(-trackRect.x, -trackRect.y);
+		g.translate(-rangeTrackRect.x, -rangeTrackRect.y);
 	}
 
-	private void oceanPaintTrack(Graphics g) {
+	private void oceanPaintRangeTrack(Graphics g) {
 		boolean leftToRight = slider.getComponentOrientation().isLeftToRight();
 		Color sliderAltTrackColor = (Color) UIManager
 				.get("Slider.altTrackColor");
@@ -308,25 +352,13 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 		int h = paintRect.height;
 
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
-			int middleOfThumb = thumbRect.x + thumbRect.width / 2 - paintRect.x;
-			int middleOfUpperThumb = upperThumbRect.x + upperThumbRect.width
-					/ 2 - paintRect.x;
-
 			if (slider.isEnabled()) {
-				int fillMinX;
-				int fillMaxX;
-
-				g.setColor(MetalLookAndFeel.getControlDarkShadow());
-				g.drawRect(0, 0, w - 1, h - 1);
-
+				int fillMinX = rangeTrackRect.x;
+				int fillMaxX = rangeTrackRect.x + rangeTrackRect.width;
 				g.setColor(MetalLookAndFeel.getPrimaryControlDarkShadow());
-				g.drawRect(Math.min(middleOfThumb, middleOfUpperThumb), 0,
-						Math.abs(middleOfThumb - middleOfUpperThumb) - 1, h - 1);
-
+				g.drawRect(rangeTrackRect.x, 0, rangeTrackRect.width - 1, h - 1);
 				if (filledSlider) {
 					g.setColor(MetalLookAndFeel.getPrimaryControlShadow());
-					fillMinX = Math.min(middleOfThumb, middleOfUpperThumb);
-					fillMaxX = Math.max(middleOfThumb, middleOfUpperThumb);
 					g.drawLine(0, 1, w, 1);
 					if (h == 6) {
 						g.setColor(MetalLookAndFeel.getWhite());
@@ -341,36 +373,20 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 				}
 			} else {
 				g.setColor(MetalLookAndFeel.getControlShadow());
-
-				g.drawRect(0, 0, w - 1, h - 1);
-
 				if (filledSlider) {
-					g.fillRect(Math.min(middleOfThumb, middleOfUpperThumb), 0,
-							Math.abs(middleOfThumb - middleOfUpperThumb) - 1,
+					g.fillRect(rangeTrackRect.x, 0, rangeTrackRect.width - 1,
 							h - 1);
 				}
 			}
 		} else {
-			int middleOfThumb = thumbRect.y + (thumbRect.height / 2)
-					- paintRect.y;
-			int middleOfUpperThumb = upperThumbRect.y
-					+ (upperThumbRect.height / 2) - paintRect.y;
-
 			if (slider.isEnabled()) {
-				int fillMinY;
-				int fillMaxY;
-
-				g.setColor(MetalLookAndFeel.getControlDarkShadow());
-				g.drawRect(0, 0, w - 1, h - 1);
-
+				int fillMinY = rangeTrackRect.y;
+				int fillMaxY = rangeTrackRect.y + rangeTrackRect.height;
 				g.setColor(MetalLookAndFeel.getPrimaryControlDarkShadow());
-				g.drawRect(0, Math.min(middleOfThumb, middleOfUpperThumb),
-						w - 1, Math.abs(middleOfThumb - middleOfUpperThumb) - 1);
-
+				g.drawRect(0, rangeTrackRect.y, w - 1,
+						rangeTrackRect.height - 1);
 				if (filledSlider) {
 					g.setColor(MetalLookAndFeel.getPrimaryControlShadow());
-					fillMinY = Math.min(middleOfThumb, middleOfUpperThumb);
-					fillMaxY = Math.max(middleOfThumb, middleOfUpperThumb);
 					if (leftToRight) {
 						g.drawLine(1, 0, 1, h);
 					} else {
@@ -394,13 +410,9 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 				}
 			} else {
 				g.setColor(MetalLookAndFeel.getControlShadow());
-
-				g.drawRect(0, 0, w - 1, h - 1);
-
 				if (filledSlider) {
-					g.fillRect(0, Math.min(middleOfThumb, middleOfUpperThumb),
-							w - 1,
-							Math.abs(middleOfThumb - middleOfUpperThumb) - 1);
+					g.fillRect(0, rangeTrackRect.y, w - 1,
+							rangeTrackRect.height - 1);
 				}
 			}
 		}

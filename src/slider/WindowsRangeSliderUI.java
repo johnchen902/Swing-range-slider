@@ -134,8 +134,6 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 				skin.paintSkin(g, trackRect.x, trackRect.y + y,
 						trackRect.width, skin.getHeight(), null);
 			}
-
-			super.paintTrackHighlight(g);
 		} else {
 			super.paintTrack(g);
 		}

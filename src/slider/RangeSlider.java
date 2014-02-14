@@ -1,9 +1,13 @@
 package slider;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
 import javax.swing.JComponent;
 import javax.swing.JSlider;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 /**
  * An extension of JSlider to select a range of values using two thumb controls.
@@ -26,6 +30,13 @@ public class RangeSlider extends JSlider {
 	private static final String uiClassID = "RangeSliderUI";
 
 	static {
+		UIManager.addPropertyChangeListener(new PropertyChangeListener() {
+			@Override
+			public void propertyChange(PropertyChangeEvent e) {
+				if (e.getPropertyName().equals("lookAndFeel"))
+					guessAndSetDefaultUI();
+			}
+		});
 		if (UIManager.get(uiClassID) == null)
 			guessAndSetDefaultUI();
 	}
@@ -40,9 +51,18 @@ public class RangeSlider extends JSlider {
 			UIManager.put(uiClassID, "slider.MetalRangeSliderUI");
 		else if (lafName.equals("Windows"))
 			UIManager.put(uiClassID, "slider.WindowsRangeSliderUI");
-		else if (lafName.equals("Nimbus"))
+		else if (lafName.equals("Nimbus")) {
+			((NimbusLookAndFeel) UIManager.getLookAndFeel()).register(
+					SliderRangeTrackRegion.INSTANCE, "Slider:SliderRangeTrack");
+			UIManager.put("Slider:SliderRangeTrack.States",
+					"Enabled,MouseOver,Pressed,Disabled,Focused,Selected");
+			UIManager.put(
+					"Slider:SliderRangeTrack[Disabled].backgroundPainter",
+					new SliderRangeTrackPainter(false));
+			UIManager.put("Slider:SliderRangeTrack[Enabled].backgroundPainter",
+					new SliderRangeTrackPainter(true));
 			UIManager.put(uiClassID, "slider.SynthRangeSliderUI");
-		else
+		} else
 			UIManager.put(uiClassID, "slider.BasicRangeSliderUI");
 	}
 

@@ -26,6 +26,7 @@ import javax.swing.plaf.basic.BasicSliderUI;
  */
 public class BasicRangeSliderUI extends BasicSliderUI {
 
+	protected Rectangle rangeTrackRect;
 	protected Rectangle upperThumbRect;
 
 	protected boolean upperThumbSelected;
@@ -33,6 +34,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 	protected boolean paintingUpperThumb;
 
 	protected Color rangeColor;
+	protected Color disabledRangeColor;
 
 	private transient boolean isDragging;
 
@@ -56,6 +58,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 	 */
 	@Override
 	public void installUI(JComponent c) {
+		rangeTrackRect = new Rectangle();
 		upperThumbRect = new Rectangle();
 		upperThumbSelected = true;
 		super.installUI(c);
@@ -68,6 +71,9 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		rangeColor = UIManager.getColor("RangeSlider.range");
 		if (rangeColor == null)
 			rangeColor = Color.GREEN;
+		disabledRangeColor = UIManager.getColor("RangeSlider.disabled.range");
+		if (disabledRangeColor == null)
+			disabledRangeColor = new Color(0x3FBF3F);
 	}
 
 	@Override
@@ -103,6 +109,12 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		return new RangeTrackListener();
 	}
 
+	@Override
+	protected void calculateGeometry() {
+		super.calculateGeometry();
+		calculateRangeTrackRect();
+	}
+
 	/**
 	 * Updates the dimensions for both thumbs.
 	 */
@@ -130,6 +142,22 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		}
 
 		return result;
+	}
+
+	protected void calculateRangeTrackRect() {
+		if (slider.getOrientation() == JSlider.HORIZONTAL) {
+			int lowerX = thumbRect.x + (thumbRect.width / 2);
+			int upperX = upperThumbRect.x + (upperThumbRect.width / 2);
+
+			rangeTrackRect.setBounds(Math.min(lowerX, upperX), trackRect.y,
+					Math.abs(upperX - lowerX), trackRect.height);
+		} else {
+			int lowerY = thumbRect.y + (thumbRect.height / 2);
+			int upperY = upperThumbRect.y + (upperThumbRect.height / 2);
+
+			rangeTrackRect.setBounds(trackRect.x, Math.min(lowerY, upperY),
+					trackRect.width, Math.abs(upperY - lowerY));
+		}
 	}
 
 	/**
@@ -192,86 +220,70 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 	 */
 	@Override
 	public void paint(Graphics g, JComponent c) {
-		paintingUpperThumb = false;
-		super.paint(g, c);
+		recalculateIfInsetsChanged();
+		recalculateIfOrientationChanged();
+		Rectangle clip = g.getClipBounds();
 
-		Rectangle clipRect = g.getClipBounds();
-		if (clipRect.intersects(upperThumbRect)) {
-			swapThumbRects();
-			paintingUpperThumb = true;
-			paintThumb(g);
-			swapThumbRects();
+		if (!clip.intersects(trackRect) && slider.getPaintTrack())
+			calculateGeometry();
+
+		if (slider.getPaintTrack() && clip.intersects(trackRect)) {
+			paintTrack(g);
 		}
-	}
-
-	/**
-	 * Paints the track.
-	 */
-	@Override
-	public void paintTrack(Graphics g) {
-		// Draw track.
-		super.paintTrack(g);
-
-		paintTrackHighlight(g);
+		if (slider.getPaintTrack() && clip.intersects(rangeTrackRect)) {
+			paintRangeTrack(g);
+		}
+		if (slider.getPaintTicks() && clip.intersects(tickRect)) {
+			paintTicks(g);
+		}
+		if (slider.getPaintLabels() && clip.intersects(labelRect)) {
+			paintLabels(g);
+		}
+		if (slider.hasFocus() && clip.intersects(focusRect)) {
+			paintFocus(g);
+		}
+		if (upperThumbSelected) {
+			if (clip.intersects(thumbRect)) {
+				paintingUpperThumb = false;
+				paintThumb(g);
+			}
+			if (clip.intersects(upperThumbRect)) {
+				paintingUpperThumb = true;
+				swapThumbRects();
+				paintThumb(g);
+				swapThumbRects();
+			}
+		} else {
+			if (clip.intersects(upperThumbRect)) {
+				paintingUpperThumb = true;
+				swapThumbRects();
+				paintThumb(g);
+				swapThumbRects();
+			}
+			if (clip.intersects(thumbRect)) {
+				paintingUpperThumb = false;
+				paintThumb(g);
+			}
+		}
 	}
 
 	/**
 	 * Paints the track highlight between the two thumbs.
 	 */
-	protected void paintTrackHighlight(Graphics g) {
-		Rectangle trackBounds = trackRect;
+	protected void paintRangeTrack(Graphics g) {
+		Rectangle trackBounds = rangeTrackRect;
 
+		if (slider.isEnabled())
+			g.setColor(rangeColor);
+		else {
+			g.setColor(disabledRangeColor);
+		}
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
-			// Determine position of selected range by moving from the middle
-			// of one thumb to the other.
-			int lowerX = thumbRect.x + (thumbRect.width / 2);
-			int upperX = upperThumbRect.x + (upperThumbRect.width / 2);
-
-			// Determine track position.
 			int cy = (trackBounds.height / 2) - 2;
-
-			// Save color and shift position.
-			Color oldColor = g.getColor();
-			g.translate(trackBounds.x, trackBounds.y + cy);
-
-			// Draw selected range.
-			if (slider.isEnabled())
-				g.setColor(rangeColor);
-			else
-				g.setColor(rangeColor.darker());
-			for (int y = 0; y <= 3; y++) {
-				g.drawLine(lowerX - trackBounds.x, y, upperX - trackBounds.x, y);
-			}
-
-			// Restore position and color.
-			g.translate(-trackBounds.x, -(trackBounds.y + cy));
-			g.setColor(oldColor);
-
+			g.fillRect(trackBounds.x, trackBounds.y + cy, trackBounds.width, 4);
 		} else {
-			// Determine position of selected range by moving from the middle
-			// of one thumb to the other.
-			int lowerY = thumbRect.y + (thumbRect.height / 2);
-			int upperY = upperThumbRect.y + (upperThumbRect.height / 2);
-
-			// Determine track position.
 			int cx = (trackBounds.width / 2) - 2;
-
-			// Save color and shift position.
-			Color oldColor = g.getColor();
-			g.translate(trackBounds.x + cx, trackBounds.y);
-
-			// Draw selected range.
-			if (slider.isEnabled())
-				g.setColor(rangeColor);
-			else
-				g.setColor(rangeColor.darker());
-			for (int x = 0; x <= 3; x++) {
-				g.drawLine(x, lowerY - trackBounds.y, x, upperY - trackBounds.y);
-			}
-
-			// Restore position and color.
-			g.translate(-(trackBounds.x + cx), -trackBounds.y);
-			g.setColor(oldColor);
+			g.fillRect(trackBounds.x + cx, trackBounds.y, 4, trackBounds.height);
 		}
 	}
 
@@ -292,6 +304,7 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		} else {
 			super.setThumbLocation(x, y);
 		}
+		calculateRangeTrackRect();
 	}
 
 	private static Rectangle upperUnionRect = new Rectangle();
@@ -393,6 +406,8 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		public void stateChanged(ChangeEvent e) {
 			if (!isDragging) {
 				super.stateChanged(e);
+				calculateRangeTrackRect();
+				slider.repaint();
 			}
 		}
 	}
