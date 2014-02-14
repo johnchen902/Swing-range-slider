@@ -40,6 +40,8 @@ public class RangeSlider extends JSlider {
 			UIManager.put(uiClassID, "slider.MetalRangeSliderUI");
 		else if (lafName.equals("Windows"))
 			UIManager.put(uiClassID, "slider.WindowsRangeSliderUI");
+		else if (lafName.equals("Nimbus"))
+			UIManager.put(uiClassID, "slider.SynthRangeSliderUI");
 		else
 			UIManager.put(uiClassID, "slider.BasicRangeSliderUI");
 	}
