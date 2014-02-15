@@ -83,7 +83,6 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 									// side of the control
 
 	private transient boolean isDragging;
-	protected boolean lowerThumbSelected;
 
 	protected RangeTrackListener trackListener;
 	protected ChangeListener changeListener;
@@ -154,7 +153,6 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 		LookAndFeel.installProperty(slider, "opaque", Boolean.TRUE);
 
 		isDragging = false;
-		lowerThumbSelected = true;
 		trackListener = createTrackListener(slider);
 		changeListener = createChangeListener(slider);
 		componentListener = createComponentListener(slider);
@@ -991,7 +989,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 		if (slider.hasFocus() && clip.intersects(focusRect)) {
 			paintFocus(g);
 		}
-		if (lowerThumbSelected) {
+		if (slider.isLowerThumbFocused()) {
 			if (clip.intersects(upperThumbRect)) {
 				paintThumb(g, false);
 			}
@@ -1387,7 +1385,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 			}
 		}
 
-		if (slider.hasFocus() && (isLower == lowerThumbSelected)) {
+		if (slider.hasFocus() && (isLower == slider.isLowerThumbFocused())) {
 			g.setColor(getFocusColor());
 			BasicGraphicsUtils.drawDashedRect(g, 0, 0, w, h);
 		}
@@ -1430,16 +1428,8 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 		lowerThumbRect.setFrame(bufferRect);
 	}
 
-	protected void setLowerThumbSelected(boolean lowerThumbSelected) {
-		if (this.lowerThumbSelected != lowerThumbSelected) {
-			this.lowerThumbSelected = lowerThumbSelected;
-			slider.repaint(lowerThumbRect);
-			slider.repaint(upperThumbRect);
-		}
-	}
-
 	private void scrollByDelta(int delta) {
-		if (lowerThumbSelected) {
+		if (slider.isLowerThumbFocused()) {
 			int oldValue = slider.getLowerValue();
 			if (delta <= slider.getExtent()) {
 				slider.setLowerValue(oldValue + delta);
@@ -1447,7 +1437,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 				int oldUpperValue = slider.getUpperValue();
 				slider.setUpperValue(oldValue + delta);
 				slider.setLowerValue(oldUpperValue);
-				setLowerThumbSelected(!lowerThumbSelected);
+				slider.setLowerThumbFocused(false);
 			}
 		} else {
 			int oldValue = slider.getUpperValue();
@@ -1457,7 +1447,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 				int oldLowerValue = slider.getLowerValue();
 				slider.setLowerValue(oldValue + delta);
 				slider.setUpperValue(oldLowerValue);
-				setLowerThumbSelected(!lowerThumbSelected);
+				slider.setLowerThumbFocused(true);
 			}
 		}
 	}
@@ -1648,7 +1638,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 			}
 		} else { // MIN or MAX
 			boolean isMin = (direction == MIN_SCROLL) ^ slider.getInverted();
-			if (lowerThumbSelected) {
+			if (slider.isLowerThumbFocused()) {
 				slider.setLowerValue(isMin ? slider.getMinimum() : slider
 						.getUpperValue());
 			} else {
@@ -1729,9 +1719,10 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 					return;
 				}
 
-				setLowerThumbSelected(lowerThumbSelected ? inLower : !inUpper);
+				slider.setLowerThumbFocused(slider.isLowerThumbFocused() ? inLower
+						: !inUpper);
 
-				Rectangle rect = lowerThumbSelected ? lowerThumbRect
+				Rectangle rect = slider.isLowerThumbFocused() ? lowerThumbRect
 						: upperThumbRect;
 
 				switch (slider.getOrientation()) {
@@ -1786,7 +1777,8 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 		}
 
 		public boolean shouldScroll(int direction) {
-			Rectangle r = lowerThumbSelected ? lowerThumbRect : upperThumbRect;
+			Rectangle r = slider.isLowerThumbFocused() ? lowerThumbRect
+					: upperThumbRect;
 			if (slider.getOrientation() == JSlider.VERTICAL) {
 				if (drawInverted() ? direction < 0 : direction > 0) {
 					if (r.y <= currentMouseY) {
@@ -1829,7 +1821,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 			}
 
 			slider.setValueIsAdjusting(true);
-			Rectangle curThumbRect = lowerThumbSelected ? lowerThumbRect
+			Rectangle curThumbRect = slider.isLowerThumbFocused() ? lowerThumbRect
 					: upperThumbRect;
 			int newValue = 0;
 			switch (slider.getOrientation()) {
@@ -1842,7 +1834,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 				thumbTop = Math.max(thumbTop, trackTop - halfThumbHeight);
 				thumbTop = Math.min(thumbTop, trackBottom - halfThumbHeight);
 
-				if (lowerThumbSelected)
+				if (slider.isLowerThumbFocused())
 					setLowerThumbLocation(curThumbRect.x, thumbTop);
 				else
 					setUpperThumbLocation(curThumbRect.x, thumbTop);
@@ -1856,20 +1848,20 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 
 				thumbLeft = Math.max(thumbLeft, trackLeft - halfThumbWidth);
 				thumbLeft = Math.min(thumbLeft, trackRight - halfThumbWidth);
-				if (lowerThumbSelected)
+				if (slider.isLowerThumbFocused())
 					setLowerThumbLocation(thumbLeft, curThumbRect.y);
 				else
 					setUpperThumbLocation(thumbLeft, curThumbRect.y);
 				newValue = valueForXPosition(thumbLeft + halfThumbWidth);
 				break;
 			}
-			if (lowerThumbSelected) {
+			if (slider.isLowerThumbFocused()) {
 				if (newValue > slider.getUpperValue()) {
 					swapThumbRects();
 					int newLowerValue = slider.getUpperValue();
 					slider.setUpperValue(newValue);
 					slider.setLowerValue(newLowerValue);
-					lowerThumbSelected = false;
+					slider.setLowerThumbFocused(false);
 				} else {
 					slider.setLowerValue(newValue);
 				}
@@ -1879,7 +1871,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 					int newUpperValue = slider.getLowerValue();
 					slider.setLowerValue(newValue);
 					slider.setUpperValue(newUpperValue);
-					lowerThumbSelected = true;
+					slider.setLowerThumbFocused(true);
 				} else {
 					slider.setUpperValue(newValue);
 				}
@@ -1954,7 +1946,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 	protected class PropertyChangeHandler implements PropertyChangeListener {
 		@Override
 		public void propertyChange(PropertyChangeEvent e) {
-			String propertyName = e.getPropertyName();
+			String propertyName = e.getPropertyName().intern();
 			if (propertyName == "orientation" || propertyName == "inverted"
 					|| propertyName == "labelTable"
 					|| propertyName == "majorTickSpacing"
@@ -1979,6 +1971,9 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 						.addChangeListener(changeListener);
 				calculateThumbLocation();
 				slider.repaint();
+			} else if (propertyName == "lowerThumbFocused") {
+				slider.repaint(lowerThumbRect);
+				slider.repaint(upperThumbRect);
 			}
 		}
 	}
@@ -2072,7 +2067,7 @@ public class BasicRangeSliderUI extends RangeSliderUI {
 				else
 					slider.transferFocus();
 			} else {
-				setLowerThumbSelected(!lowerThumbSelected);
+				slider.setLowerThumbFocused(!slider.isLowerThumbFocused());
 			}
 		}
 	}

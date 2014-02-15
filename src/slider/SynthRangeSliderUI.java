@@ -750,7 +750,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 
 	private int getThumbState(JComponent c, boolean isLower) {
 		if (c.isEnabled()) {
-			if (lowerThumbSelected == isLower) {
+			if (slider.isLowerThumbFocused() == isLower) {
 				int state = 0;
 				if (isLower ? thumbActiveLower : thumbActiveUpper)
 					state = MOUSE_OVER;

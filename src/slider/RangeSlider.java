@@ -68,6 +68,8 @@ public class RangeSlider extends JSlider {
 			UIManager.put(uiClassID, "slider.BasicRangeSliderUI");
 	}
 
+	private boolean lowerThumbFocused = true;
+
 	/**
 	 * Creates a range slider with the range 0 to 100 and an initial value of 33
 	 * and 66.
@@ -350,5 +352,32 @@ public class RangeSlider extends JSlider {
 
 		// Set extent to set upper value.
 		setExtent(newExtent);
+	}
+
+	/**
+	 * Get whether the lower thumb is focused if the slider is focused, or
+	 * whether the lower thumb will be focused if the slider become focused.
+	 * 
+	 * @return <code>true</code> if the lower thumb does; <code>false</code> if
+	 *         the upper thumb does
+	 */
+	public boolean isLowerThumbFocused() {
+		return lowerThumbFocused;
+	}
+
+	/**
+	 * Set whether the lower thumb is focused if the slider is focused, or
+	 * whether the lower thumb will be focused if the slider become focused.
+	 * 
+	 * @param lowerThumbFocused
+	 *            <code>true</code> if the lower thumb does; <code>false</code>
+	 *            if the upper thumb does
+	 */
+	public void setLowerThumbFocused(boolean lowerThumbFocused) {
+		if (this.lowerThumbFocused != lowerThumbFocused) {
+			this.lowerThumbFocused = lowerThumbFocused;
+			firePropertyChange("lowerThumbFocused", !lowerThumbFocused,
+					lowerThumbFocused);
+		}
 	}
 }

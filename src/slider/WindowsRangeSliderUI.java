@@ -187,7 +187,7 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 		if (xp != null) {
 			String stateName = "NORMAL";
 
-			if (isLower == lowerThumbSelected) {
+			if (isLower == slider.isLowerThumbFocused()) {
 				if (slider.hasFocus()) {
 					stateName = "FOCUSED";
 				}
