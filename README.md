@@ -4,6 +4,7 @@ Swing-range-slider
 Swing range slider library
 
 The screenshot of the `RangeSlider` and `JSlider` in each Look and Feel, horizontal or vertical, enabled or disabled:
+
 ![basic](https://f.cloud.github.com/assets/5734324/2178078/da2cf834-9655-11e3-9cdf-9a017f8e8da4.png)
 ![metal](https://f.cloud.github.com/assets/5734324/2178080/da2da540-9655-11e3-84f5-29861fce576a.png)
 ![windows](https://f.cloud.github.com/assets/5734324/2178082/da304250-9655-11e3-8e88-052c58c21dc1.png)
