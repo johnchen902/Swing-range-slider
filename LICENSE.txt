@@ -1,3 +1,8 @@
+I don't know how I can use a license, but seems like the Ernest Yu ask the
+following copyright notice and permission notice to be included:
+
+---
+
 The MIT License
 
 Copyright (c) 2010 Ernest Yu. All rights reserved.

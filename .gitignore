@@ -1,4 +1,6 @@
 .settings/
-build/
+bin/
+.classpath
+.project
 *.jar
 *.zip
