@@ -64,6 +64,8 @@ public class RangeSlider extends JSlider {
 			UIManager.put("Slider:SliderRangeTrack[Enabled].backgroundPainter",
 					new SliderRangeTrackPainter(true));
 			UIManager.put(uiClassID, "slider.SynthRangeSliderUI");
+		} else if (lafName.equals("Motif")) {
+			UIManager.put(uiClassID, "slider.MotifRangeSliderUI");
 		} else
 			UIManager.put(uiClassID, "slider.BasicRangeSliderUI");
 	}
