@@ -506,6 +506,39 @@ public class BasicRangeSliderUI extends BasicSliderUI {
 		}
 
 		@Override
+		public boolean shouldScroll(int direction) {
+			Rectangle r = upperThumbSelected ? upperThumbRect : thumbRect;
+			if (slider.getOrientation() == JSlider.VERTICAL) {
+				if (drawInverted() ? direction < 0 : direction > 0) {
+					if (r.y <= currentMouseY) {
+						return false;
+					}
+				} else if (r.y + r.height >= currentMouseY) {
+					return false;
+				}
+			} else {
+				if (drawInverted() ? direction < 0 : direction > 0) {
+					if (r.x + r.width >= currentMouseX) {
+						return false;
+					}
+				} else if (r.x <= currentMouseX) {
+					return false;
+				}
+			}
+
+			if (direction > 0
+					&& slider.getValue() + slider.getExtent() >= slider
+							.getMaximum()) {
+				return false;
+			} else if (direction < 0
+					&& slider.getValue() <= slider.getMinimum()) {
+				return false;
+			}
+
+			return true;
+		}
+
+		@Override
 		public void mouseReleased(MouseEvent e) {
 			isDragging = false;
 			super.mouseReleased(e);
