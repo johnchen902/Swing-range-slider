@@ -3,10 +3,12 @@ package slider;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import javax.swing.BoundedRangeModel;
 import javax.swing.JComponent;
 import javax.swing.JSlider;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
+import javax.swing.plaf.SliderUI;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 /**
@@ -67,27 +69,122 @@ public class RangeSlider extends JSlider {
 	}
 
 	/**
-	 * Constructs a RangeSlider with default minimum and maximum values of 0 and
-	 * 100.
+	 * Creates a range slider with the range 0 to 100 and an initial value of 33
+	 * and 66.
 	 */
 	public RangeSlider() {
-		initSlider();
+		this(HORIZONTAL, 0, 100, 33, 66);
 	}
 
 	/**
-	 * Constructs a RangeSlider with the specified default minimum and maximum
-	 * values.
+	 * Creates a range slider using the specified orientation with the range
+	 * {@code 0} to {@code 100} and an initial value of {@code 33} and
+	 * {@code 66}. The orientation can be either
+	 * <code>SwingConstants.VERTICAL</code> or
+	 * <code>SwingConstants.HORIZONTAL</code>.
+	 * 
+	 * @param orientation
+	 *            the orientation of the slider
+	 * @throws IllegalArgumentException
+	 *             if orientation is not one of {@code VERTICAL},
+	 *             {@code HORIZONTAL}
+	 * @see #setOrientation
+	 */
+	public RangeSlider(int orientation) {
+		this(orientation, 0, 100, 33, 66);
+	}
+
+	/**
+	 * Creates a horizontal range slider using the specified min and max with an
+	 * initial value equal to the {@code (min * 2 + max) / 3} and
+	 * {@code (min + max * 2) / 3}.
+	 * <p>
+	 * The <code>BoundedRangeModel</code> that holds the slider's data handles
+	 * any issues that may arise from improperly setting the minimum and maximum
+	 * values on the slider. See the {@code BoundedRangeModel} documentation for
+	 * details.
+	 * 
+	 * @param min
+	 *            the minimum value of the slider
+	 * @param max
+	 *            the maximum value of the slider
+	 * @see BoundedRangeModel
+	 * @see #setMinimum
+	 * @see #setMaximum
 	 */
 	public RangeSlider(int min, int max) {
-		super(min, max);
-		initSlider();
+		this(HORIZONTAL, min, max, (min * 2 + max) / 3, (min + max * 2) / 3);
 	}
 
 	/**
-	 * Initializes the slider by setting default properties.
+	 * Creates a horizontal range slider using the specified min, max, lower
+	 * value and upper value.
+	 * <p>
+	 * The <code>BoundedRangeModel</code> that holds the slider's data handles
+	 * any issues that may arise from improperly setting the minimum, initial,
+	 * and maximum values on the slider. See the {@code BoundedRangeModel}
+	 * documentation for details.
+	 * 
+	 * @param min
+	 *            the minimum value of the slider
+	 * @param max
+	 *            the maximum value of the slider
+	 * @param lowerValue
+	 *            the initial lower value of the slider
+	 * @param upperValue
+	 *            the initial upper value of the slider
+	 * @see BoundedRangeModel
+	 * @see #setMinimum
+	 * @see #setMaximum
+	 * @see #setValue
+	 * @see #setUpperValue
 	 */
-	private void initSlider() {
-		setOrientation(HORIZONTAL);
+	public RangeSlider(int min, int max, int lowerValue, int upperValue) {
+		this(HORIZONTAL, min, max, lowerValue, upperValue);
+	}
+
+	/**
+	 * Creates a range slider with the specified orientation and the specified
+	 * minimum, maximum, and initial values. The orientation can be either
+	 * <code>SwingConstants.VERTICAL</code> or
+	 * <code>SwingConstants.HORIZONTAL</code>.
+	 * <p>
+	 * The <code>BoundedRangeModel</code> that holds the slider's data handles
+	 * any issues that may arise from improperly setting the minimum, initial,
+	 * and maximum values on the slider. See the {@code BoundedRangeModel}
+	 * documentation for details.
+	 * 
+	 * @param orientation
+	 *            the orientation of the slider
+	 * @param min
+	 *            the minimum value of the slider
+	 * @param max
+	 *            the maximum value of the slider
+	 * @param lowerValue
+	 *            the initial lower value of the slider
+	 * @param upperValue
+	 *            the initial upper value of the slider
+	 * @throws IllegalArgumentException
+	 *             if orientation is not one of {@code VERTICAL},
+	 *             {@code HORIZONTAL}
+	 * @see BoundedRangeModel
+	 * @see #setOrientation
+	 * @see #setMinimum
+	 * @see #setMaximum
+	 * @see #setValue
+	 * @see #setUpperValue
+	 */
+	public RangeSlider(int orientation, int min, int max, int lowerValue,
+			int upperValue) {
+		super(orientation, min, max, lowerValue);
+		setUpperValue(upperValue);
+	}
+
+	/**
+	 * Creates a horizontal slider using the specified BoundedRangeModel.
+	 */
+	public RangeSlider(BoundedRangeModel brm) {
+		super(brm);
 	}
 
 	/**
@@ -103,7 +200,46 @@ public class RangeSlider extends JSlider {
 	}
 
 	/**
-	 * Returns the lower value in the range.
+	 * Sets the UI object which implements the L&F for this component.
+	 * 
+	 * @param ui
+	 *            the SliderUI L&F object
+	 * @throws IllegalArgumentException
+	 *             if {@code ui} is not a RangeSliderUI
+	 * @see UIDefaults#getUI
+	 */
+	@Override
+	public void setUI(SliderUI ui) {
+		if (!(ui instanceof RangeSliderUI))
+			throw new IllegalArgumentException("ui is not a RangeSliderUI");
+		super.setUI(ui);
+	}
+
+	/**
+	 * Sets the UI object which implements the L&F for this component.
+	 * 
+	 * @param ui
+	 *            the SliderUI L&F object
+	 * @see UIDefaults#getUI
+	 */
+	public void setUI(RangeSliderUI ui) {
+		super.setUI(ui);
+	}
+
+	@Override
+	public RangeSliderUI getUI() {
+		return (RangeSliderUI) super.getUI();
+	}
+
+	/**
+	 * Returns the slider's current lower value from the
+	 * {@code BoundedRangeModel}.
+	 * 
+	 * @return the current lower value of the slider
+	 * @see #setValue
+	 * @see #getLowerValue
+	 * @see #getUpperValue
+	 * @see BoundedRangeModel#getValue
 	 */
 	@Override
 	public int getValue() {
@@ -111,18 +247,65 @@ public class RangeSlider extends JSlider {
 	}
 
 	/**
-	 * Sets the lower value in the range.
+	 * Sets the slider's current lower value to {@code value}, <i>without
+	 * changing the extent</i>. This method forwards the new value to the model.
+	 * <p>
+	 * The data model (an instance of {@code BoundedRangeModel}) handles any
+	 * mathematical issues arising from assigning faulty values. See the
+	 * {@code BoundedRangeModel} documentation for details.
+	 * <p>
+	 * If the new value is different from the previous value, all change
+	 * listeners are notified.
+	 * 
+	 * @param value
+	 *            the new lower value
+	 * @see #getValue
+	 * @see #setLowerValue
+	 * @see #setUpperValue
+	 * @see #addChangeListener
+	 * @see BoundedRangeModel#setValue
 	 */
 	@Override
 	public void setValue(int value) {
+		super.setValue(value);
+	}
+
+	/**
+	 * Returns the slider's current lower value from the
+	 * {@code BoundedRangeModel}. Equivalent to {@code getValue}.
+	 * 
+	 * @return the current lower value of the slider
+	 * @see #setLowerValue
+	 * @see #getValue
+	 * @see #getUpperValue
+	 */
+	public int getLowerValue() {
+		return getValue();
+	}
+
+	/**
+	 * Sets the slider's current lower value to {@code value}, <i>without
+	 * changing the upper value</i>.
+	 * <p>
+	 * If the new value is different from the previous value, all change
+	 * listeners are notified.
+	 * 
+	 * @param value
+	 *            the new lower value
+	 * @see #getLowerValue
+	 * @see #setValue
+	 * @see #setUpperValue
+	 * @see #addChangeListener
+	 */
+	public void setLowerValue(int lowerValue) {
 		int oldValue = getValue();
-		if (oldValue == value) {
+		if (oldValue == lowerValue) {
 			return;
 		}
 
 		// Compute new value and extent to maintain upper value.
 		int oldExtent = getExtent();
-		int newValue = Math.min(Math.max(getMinimum(), value), oldValue
+		int newValue = Math.min(Math.max(getMinimum(), lowerValue), oldValue
 				+ oldExtent);
 		int newExtent = oldExtent + oldValue - newValue;
 
@@ -132,20 +315,38 @@ public class RangeSlider extends JSlider {
 	}
 
 	/**
-	 * Returns the upper value in the range.
+	 * Returns the slider's current upper value from the
+	 * {@code BoundedRangeModel}.
+	 * 
+	 * @return the current upper value of the slider
+	 * @see #setUpperValue
+	 * @see #getValue
+	 * @see #getLowerValue
 	 */
 	public int getUpperValue() {
 		return getValue() + getExtent();
 	}
 
 	/**
-	 * Sets the upper value in the range.
+	 * Sets the slider's current upper value to {@code value}, <i>without
+	 * changing the lower value if possible</i>.
+	 * <p>
+	 * If the new value is different from the previous value, all change
+	 * listeners are notified.
+	 * 
+	 * @param value
+	 *            the new upper value
+	 * @see #getUpperValue
+	 * @see #setValue
+	 * @see #setLowerValue
+	 * @see #addChangeListener
+	 * @beaninfo preferred
 	 */
-	public void setUpperValue(int value) {
+	public void setUpperValue(int upperValue) {
 		// Compute new extent.
 		int lowerValue = getValue();
-		int newExtent = Math.min(Math.max(0, value - lowerValue), getMaximum()
-				- lowerValue);
+		int newExtent = Math.min(Math.max(0, upperValue - lowerValue),
+				getMaximum() - lowerValue);
 
 		// Set extent to set upper value.
 		setExtent(newExtent);

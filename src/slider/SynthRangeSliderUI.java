@@ -1,6 +1,5 @@
 package slider;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
@@ -77,11 +76,10 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 * @return the UI object
 	 */
 	public static ComponentUI createUI(JComponent c) {
-		return new SynthRangeSliderUI((RangeSlider) c);
+		return new SynthRangeSliderUI();
 	}
 
-	protected SynthRangeSliderUI(RangeSlider c) {
-		super(c);
+	protected SynthRangeSliderUI() {
 	}
 
 	/**
@@ -89,9 +87,6 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 */
 	@Override
 	protected void installDefaults(JSlider slider) {
-		rangeColor = UIManager.getColor("RangeSlider.range");
-		if (rangeColor == null)
-			rangeColor = Color.GREEN.darker();
 		updateStyle(slider);
 	}
 
@@ -101,7 +96,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 */
 	@Override
 	protected void uninstallDefaults(JSlider slider) {
-		SynthContext context = getContext(slider, ENABLED);
+		SynthContext context = getContextByState(slider, ENABLED);
 		style.uninstallDefaults(context);
 		style = null;
 
@@ -137,7 +132,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	}
 
 	private void updateStyle(JSlider c) {
-		SynthContext context = getContext(c, ENABLED);
+		SynthContext context = getContextByState(c, ENABLED);
 		SynthStyle oldStyle = style;
 		style = (context = updateStyle(context, this)).getStyle();
 
@@ -175,14 +170,14 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 			}
 		}
 
-		context = getStyleUpdatedContext(c, Region.SLIDER_TRACK, ENABLED, this);
+		context = getInitialContext(c, Region.SLIDER_TRACK, ENABLED, this);
 		sliderTrackStyle = context.getStyle();
 
-		context = getStyleUpdatedContext(c, SliderRangeTrackRegion.INSTANCE,
+		context = getInitialContext(c, SliderRangeTrackRegion.INSTANCE,
 				ENABLED, this);
 		sliderRangeTrackStyle = context.getStyle();
 
-		context = getStyleUpdatedContext(c, Region.SLIDER_THUMB, ENABLED, this);
+		context = getInitialContext(c, Region.SLIDER_THUMB, ENABLED, this);
 		sliderThumbStyle = context.getStyle();
 	}
 
@@ -190,12 +185,12 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 * @inheritDoc
 	 */
 	@Override
-	protected TrackListener createTrackListener(JSlider s) {
+	protected RangeTrackListener createTrackListener(JSlider s) {
 		return new SynthTrackListener();
 	}
 
 	private void updateThumbState(int x, int y) {
-		setThumbActiveLower(thumbRect.contains(x, y));
+		setThumbActiveLower(lowerThumbRect.contains(x, y));
 		setThumbActiveUpper(upperThumbRect.contains(x, y));
 	}
 
@@ -207,7 +202,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	private void setThumbActiveLower(boolean active) {
 		if (thumbActiveLower != active) {
 			thumbActiveLower = active;
-			slider.repaint(thumbRect);
+			slider.repaint(lowerThumbRect);
 		}
 	}
 
@@ -221,7 +216,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	private void setThumbPressed(boolean pressed) {
 		if (thumbPressed != pressed) {
 			thumbPressed = pressed;
-			slider.repaint(thumbRect);
+			slider.repaint(lowerThumbRect);
 			slider.repaint(upperThumbRect);
 		}
 	}
@@ -240,7 +235,8 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		if (slider.getPaintLabels() && labelsHaveSameBaselines()) {
 			// Get the insets for the track.
 			Insets trackInsets = new Insets(0, 0, 0, 0);
-			SynthContext trackContext = getContext(slider, Region.SLIDER_TRACK);
+			SynthContext trackContext = getContextByRegion(slider,
+					Region.SLIDER_TRACK);
 			style.getInsets(trackContext, trackInsets);
 			if (slider.getOrientation() == JSlider.HORIZONTAL) {
 				int valueHeight = 0;
@@ -319,9 +315,10 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		recalculateIfInsetsChanged();
 		Dimension d = new Dimension(contentRect.width, contentRect.height);
 		if (slider.getOrientation() == JSlider.VERTICAL) {
-			d.height = thumbRect.height + insetCache.top + insetCache.bottom;
+			d.height = lowerThumbRect.height + insetCache.top
+					+ insetCache.bottom;
 		} else {
-			d.width = thumbRect.width + insetCache.left + insetCache.right;
+			d.width = lowerThumbRect.width + insetCache.left + insetCache.right;
 		}
 		return d;
 	}
@@ -346,7 +343,8 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 
 		// Get the insets for the track.
 		Insets trackInsets = new Insets(0, 0, 0, 0);
-		SynthContext trackContext = getContext(slider, Region.SLIDER_TRACK);
+		SynthContext trackContext = getContextByRegion(slider,
+				Region.SLIDER_TRACK);
 		style.getInsets(trackContext, trackInsets);
 
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
@@ -528,9 +526,9 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	protected void calculateThumbLocation() {
 		super.calculateThumbLocation();
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
-			thumbRect.y += trackBorder;
+			lowerThumbRect.y += trackBorder;
 		} else {
-			thumbRect.x += trackBorder;
+			lowerThumbRect.x += trackBorder;
 		}
 		Point mousePosition = slider.getMousePosition();
 		if (mousePosition != null) {
@@ -542,10 +540,10 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 * @inheritDoc
 	 */
 	@Override
-	public void setThumbLocation(int x, int y) {
-		super.setThumbLocation(x, y);
-		// Value rect is tied to the thumb location. We need to repaint when
-		// the thumb repaints.
+	protected void setLowerThumbLocation(int x, int y) {
+		super.setLowerThumbLocation(x, y);
+		// Value rect is tied to the lower thumb location. We need to repaint
+		// when the thumb repaints.
 		slider.repaint(valueRect.x, valueRect.y, valueRect.width,
 				valueRect.height);
 		setThumbActiveLower(false);
@@ -559,9 +557,9 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	protected int xPositionForValue(int value) {
 		int min = slider.getMinimum();
 		int max = slider.getMaximum();
-		int trackLeft = trackRect.x + thumbRect.width / 2 + trackBorder;
-		int trackRight = trackRect.x + trackRect.width - thumbRect.width / 2
-				- trackBorder;
+		int trackLeft = trackRect.x + lowerThumbRect.width / 2 + trackBorder;
+		int trackRight = trackRect.x + trackRect.width - lowerThumbRect.width
+				/ 2 - trackBorder;
 		int trackLength = trackRight - trackLeft;
 		double valueRange = (double) max - (double) min;
 		double pixelsPerValue = trackLength / valueRange;
@@ -588,8 +586,8 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	protected int yPositionForValue(int value, int trackY, int trackHeight) {
 		int min = slider.getMinimum();
 		int max = slider.getMaximum();
-		int trackTop = trackY + thumbRect.height / 2 + trackBorder;
-		int trackBottom = trackY + trackHeight - thumbRect.height / 2
+		int trackTop = trackY + lowerThumbRect.height / 2 + trackBorder;
+		int trackBottom = trackY + trackHeight - lowerThumbRect.height / 2
 				- trackBorder;
 		int trackLength = trackBottom - trackTop;
 		double valueRange = (double) max - (double) min;
@@ -614,13 +612,13 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 * @inheritDoc
 	 */
 	@Override
-	public int valueForYPosition(int yPos) {
+	protected int valueForYPosition(int yPos) {
 		int value;
 		int minValue = slider.getMinimum();
 		int maxValue = slider.getMaximum();
-		int trackTop = trackRect.y + thumbRect.height / 2 + trackBorder;
-		int trackBottom = trackRect.y + trackRect.height - thumbRect.height / 2
-				- trackBorder;
+		int trackTop = trackRect.y + lowerThumbRect.height / 2 + trackBorder;
+		int trackBottom = trackRect.y + trackRect.height
+				- lowerThumbRect.height / 2 - trackBorder;
 		int trackLength = trackBottom - trackTop;
 
 		if (yPos <= trackTop) {
@@ -643,13 +641,13 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 * @inheritDoc
 	 */
 	@Override
-	public int valueForXPosition(int xPos) {
+	protected int valueForXPosition(int xPos) {
 		int value;
 		int minValue = slider.getMinimum();
 		int maxValue = slider.getMaximum();
-		int trackLeft = trackRect.x + thumbRect.width / 2 + trackBorder;
-		int trackRight = trackRect.x + trackRect.width - thumbRect.width / 2
-				- trackBorder;
+		int trackLeft = trackRect.x + lowerThumbRect.width / 2 + trackBorder;
+		int trackRight = trackRect.x + trackRect.width - lowerThumbRect.width
+				/ 2 - trackBorder;
 		int trackLength = trackRight - trackLeft;
 
 		if (xPos <= trackLeft) {
@@ -708,18 +706,23 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 */
 	@Override
 	public SynthContext getContext(JComponent c) {
-		return getContext(c, getComponentState(c));
+		return getContextByState(c, getComponentState(c));
 	}
 
-	private SynthContext getContext(JComponent c, int state) {
+	private SynthContext getContextByState(JComponent c, int state) {
 		Region region = SynthLookAndFeel.getRegion(c);
 		if (region == null)
 			region = Region.SLIDER;
 		return getContext(c, region, state);
 	}
 
-	private SynthContext getContext(JComponent c, Region subregion) {
-		return getContext(c, subregion, getComponentState(c, subregion));
+	private SynthContext getContextByRegion(JComponent c, Region subregion) {
+		return getContext(c, subregion, getComponentState(c));
+	}
+
+	private SynthContext getThumbContext(JComponent c, boolean isLowerThumb) {
+		return getContext(c, Region.SLIDER_THUMB,
+				getThumbState(c, isLowerThumb));
 	}
 
 	private SynthContext getContext(JComponent c, Region subregion, int state) {
@@ -745,11 +748,11 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		return new SynthContext(c, subregion, style, state);
 	}
 
-	private int getComponentState(JComponent c, Region region) {
-		if (region == Region.SLIDER_THUMB && c.isEnabled()) {
-			if (upperThumbSelected == paintingUpperThumb) {
+	private int getThumbState(JComponent c, boolean isLower) {
+		if (c.isEnabled()) {
+			if (lowerThumbSelected == isLower) {
 				int state = 0;
-				if (paintingUpperThumb ? thumbActiveUpper : thumbActiveLower)
+				if (isLower ? thumbActiveLower : thumbActiveUpper)
 					state = MOUSE_OVER;
 				if (thumbPressed)
 					state = PRESSED;
@@ -760,8 +763,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 				return state;
 			} else {
 				if (!thumbPressed)
-					if (paintingUpperThumb ? thumbActiveUpper
-							: thumbActiveLower)
+					if (isLower ? thumbActiveLower : thumbActiveUpper)
 						return MOUSE_OVER;
 				return getComponentState(c) & ~FOCUSED;
 			}
@@ -836,7 +838,8 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 					.getGraphicsUtils(context)
 					.computeStringWidth(context, g.getFont(), fm,
 							"" + slider.getValue());
-			valueRect.x = thumbRect.x + (thumbRect.width - labelWidth) / 2;
+			valueRect.x = lowerThumbRect.x
+					+ (lowerThumbRect.width - labelWidth) / 2;
 
 			// For horizontal sliders, make sure value is not painted
 			// outside slider bounds.
@@ -858,25 +861,24 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		}
 
 		if (slider.getPaintTrack() && clip.intersects(trackRect)) {
-			SynthContext subcontext = getContext(slider, Region.SLIDER_TRACK);
+			SynthContext subcontext = getContextByRegion(slider,
+					Region.SLIDER_TRACK);
 			paintTrack(subcontext, g, trackRect);
 		}
 
 		if (slider.getPaintTrack() && clip.intersects(rangeTrackRect)) {
-			SynthContext subcontext = getContext(slider,
+			SynthContext subcontext = getContextByRegion(slider,
 					SliderRangeTrackRegion.INSTANCE);
 			paintTrack(subcontext, g, rangeTrackRect);
 		}
 
-		if (clip.intersects(thumbRect)) {
-			paintingUpperThumb = false;
-			SynthContext subcontext = getContext(slider, Region.SLIDER_THUMB);
-			paintThumb(subcontext, g, thumbRect);
+		if (clip.intersects(lowerThumbRect)) {
+			SynthContext subcontext = getThumbContext(slider, true);
+			paintThumb(subcontext, g, lowerThumbRect);
 		}
 
 		if (clip.intersects(upperThumbRect)) {
-			paintingUpperThumb = true;
-			SynthContext subcontext = getContext(slider, Region.SLIDER_THUMB);
+			SynthContext subcontext = getThumbContext(slider, false);
 			paintThumb(subcontext, g, upperThumbRect);
 		}
 
@@ -971,7 +973,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		@Override
 		public void mousePressed(MouseEvent e) {
 			super.mousePressed(e);
-			setThumbPressed(thumbRect.contains(e.getX(), e.getY())
+			setThumbPressed(lowerThumbRect.contains(e.getX(), e.getY())
 					|| upperThumbRect.contains(e.getX(), e.getY()));
 		}
 
@@ -1014,7 +1016,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 		return SynthUI.DISABLED;
 	}
 
-	private SynthContext getStyleUpdatedContext(JComponent c, Region subregion,
+	private SynthContext getInitialContext(JComponent c, Region subregion,
 			int state, SynthUI ui) {
 		SynthStyle style = SynthLookAndFeel.getStyle(c, subregion);
 
@@ -1029,7 +1031,7 @@ public class SynthRangeSliderUI extends BasicRangeSliderUI implements
 	 * A convience method that will reset the Style of StyleContext if
 	 * necessary.
 	 * 
-	 * @return newStyle
+	 * @return new context containing new style
 	 */
 	private static SynthContext updateStyle(SynthContext context, SynthUI ui) {
 		SynthStyle newStyle = SynthLookAndFeel.getStyle(context.getComponent(),

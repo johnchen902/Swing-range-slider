@@ -55,7 +55,6 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 	}
 
 	public MetalRangeSliderUI() {
-		super(null);
 	}
 
 	private static Icon getHorizThumbIcon() {
@@ -94,8 +93,7 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 		return new MetalPropertyListener();
 	}
 
-	protected class MetalPropertyListener extends
-			BasicRangeSliderUI.PropertyChangeHandler {
+	protected class MetalPropertyListener extends PropertyChangeHandler {
 		@Override
 		public void propertyChange(PropertyChangeEvent e) {
 			super.propertyChange(e);
@@ -124,8 +122,8 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 			+ "OceanVerticalSliderThumbIcon";
 
 	@Override
-	public void paintThumb(Graphics g) {
-		Rectangle knobBounds = thumbRect;
+	protected void paintThumb(Graphics g, boolean isLower) {
+		Rectangle knobBounds = isLower ? lowerThumbRect : upperThumbRect;
 
 		g.translate(knobBounds.x, knobBounds.y);
 
@@ -139,22 +137,20 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 		if (icon.getClass().getName().equals(OCEAN_HORIZONTAL)) {
 			sun.swing.CachedPainter p = (CachedPainter) icon;
 			p.paint(slider, g, 0, 0, icon.getIconWidth(), icon.getIconHeight(),
-					slider.hasFocus()
-							&& (paintingUpperThumb == upperThumbSelected),
+					slider.hasFocus() && (isLower == lowerThumbSelected),
 					slider.isEnabled(), MetalLookAndFeel.getCurrentTheme());
 		} else if (icon.getClass().getName().equals(OCEAN_VERTICAL)) {
 			sun.swing.CachedPainter p = (CachedPainter) icon;
 			p.paint(slider, g, 0, 0, icon.getIconWidth(), icon.getIconHeight(),
 					slider.getComponentOrientation().isLeftToRight(),
-					slider.hasFocus()
-							&& (paintingUpperThumb == upperThumbSelected),
+					slider.hasFocus() && (isLower == lowerThumbSelected),
 					slider.isEnabled(), MetalLookAndFeel.getCurrentTheme());
 		} else {
 			icon.paintIcon(slider, g, 0, 0);
-			if (slider.hasFocus() && (paintingUpperThumb == upperThumbSelected)) {
+			if (slider.hasFocus() && (isLower == lowerThumbSelected)) {
 				g.setColor(getFocusColor());
-				BasicGraphicsUtils.drawDashedRect(g, 0, 0, thumbRect.width,
-						thumbRect.height);
+				BasicGraphicsUtils.drawDashedRect(g, 0, 0, knobBounds.width,
+						knobBounds.height);
 			}
 		}
 
@@ -186,7 +182,7 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 	}
 
 	@Override
-	public void paintTrack(Graphics g) {
+	protected void paintTrack(Graphics g) {
 		if (MetalLookAndFeel.getCurrentTheme() instanceof OceanTheme) {
 			oceanPaintTrack(g);
 			return;
@@ -353,10 +349,11 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
 			if (slider.isEnabled()) {
-				int fillMinX = rangeTrackRect.x;
-				int fillMaxX = rangeTrackRect.x + rangeTrackRect.width;
+				int fillMinX = rangeTrackRect.x - paintRect.x;
+				int fillMaxX = rangeTrackRect.x + rangeTrackRect.width
+						- paintRect.x;
 				g.setColor(MetalLookAndFeel.getPrimaryControlDarkShadow());
-				g.drawRect(rangeTrackRect.x, 0, rangeTrackRect.width - 1, h - 1);
+				g.drawRect(fillMinX, 0, rangeTrackRect.width - 1, h - 1);
 				if (filledSlider) {
 					g.setColor(MetalLookAndFeel.getPrimaryControlShadow());
 					g.drawLine(0, 1, w, 1);
@@ -374,17 +371,17 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 			} else {
 				g.setColor(MetalLookAndFeel.getControlShadow());
 				if (filledSlider) {
-					g.fillRect(rangeTrackRect.x, 0, rangeTrackRect.width - 1,
-							h - 1);
+					g.fillRect(rangeTrackRect.x - paintRect.x, 0,
+							rangeTrackRect.width - 1, h - 1);
 				}
 			}
 		} else {
 			if (slider.isEnabled()) {
-				int fillMinY = rangeTrackRect.y;
-				int fillMaxY = rangeTrackRect.y + rangeTrackRect.height;
+				int fillMinY = rangeTrackRect.y - paintRect.y;
+				int fillMaxY = rangeTrackRect.y + rangeTrackRect.height
+						- paintRect.y;
 				g.setColor(MetalLookAndFeel.getPrimaryControlDarkShadow());
-				g.drawRect(0, rangeTrackRect.y, w - 1,
-						rangeTrackRect.height - 1);
+				g.drawRect(0, fillMinY, w - 1, rangeTrackRect.height - 1);
 				if (filledSlider) {
 					g.setColor(MetalLookAndFeel.getPrimaryControlShadow());
 					if (leftToRight) {
@@ -411,7 +408,7 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 			} else {
 				g.setColor(MetalLookAndFeel.getControlShadow());
 				if (filledSlider) {
-					g.fillRect(0, rangeTrackRect.y, w - 1,
+					g.fillRect(0, rangeTrackRect.y - paintRect.y, w - 1,
 							rangeTrackRect.height - 1);
 				}
 			}
@@ -421,7 +418,7 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 	}
 
 	@Override
-	public void paintFocus(Graphics g) {
+	protected void paintFocus(Graphics g) {
 	}
 
 	@Override
@@ -445,7 +442,7 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 	 * to determine the tick area rectangle.
 	 */
 	@Override
-	public int getTickLength() {
+	protected int getTickLength() {
 		return slider.getOrientation() == JSlider.HORIZONTAL ? safeLength
 				+ TICK_BUFFER + 1 : safeLength + TICK_BUFFER + 3;
 	}
@@ -461,9 +458,9 @@ public class MetalRangeSliderUI extends BasicRangeSliderUI {
 		final double kWidthScalar = kIdealTrackWidth / kIdealThumbHeight;
 
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
-			return (int) (kWidthScalar * thumbRect.height);
+			return (int) (kWidthScalar * lowerThumbRect.height);
 		} else {
-			return (int) (kWidthScalar * thumbRect.width);
+			return (int) (kWidthScalar * lowerThumbRect.width);
 		}
 	}
 

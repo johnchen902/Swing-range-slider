@@ -33,12 +33,8 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 	private boolean rolloverUpper = false;
 	private boolean pressed = false;
 
-	public WindowsRangeSliderUI(RangeSlider b) {
-		super(b);
-	}
-
 	public static ComponentUI createUI(JComponent b) {
-		return new WindowsRangeSliderUI((RangeSlider) b);
+		return new WindowsRangeSliderUI();
 	}
 
 	/**
@@ -48,7 +44,7 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 	 * @since 1.6
 	 */
 	@Override
-	protected TrackListener createTrackListener(JSlider slider) {
+	protected RangeTrackListener createTrackListener(JSlider slider) {
 		return new WindowsTrackListener();
 	}
 
@@ -56,14 +52,14 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 
 		@Override
 		public void mouseMoved(MouseEvent e) {
-			updateRollover(thumbRect.contains(e.getX(), e.getY()),
+			updateRollover(lowerThumbRect.contains(e.getX(), e.getY()),
 					upperThumbRect.contains(e.getX(), e.getY()));
 			super.mouseMoved(e);
 		}
 
 		@Override
 		public void mouseEntered(MouseEvent e) {
-			updateRollover(thumbRect.contains(e.getX(), e.getY()),
+			updateRollover(lowerThumbRect.contains(e.getX(), e.getY()),
 					upperThumbRect.contains(e.getX(), e.getY()));
 			super.mouseEntered(e);
 		}
@@ -76,7 +72,7 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 
 		@Override
 		public void mousePressed(MouseEvent e) {
-			updatePressed(thumbRect.contains(e.getX(), e.getY())
+			updatePressed(lowerThumbRect.contains(e.getX(), e.getY())
 					|| upperThumbRect.contains(e.getX(), e.getY()));
 			super.mousePressed(e);
 		}
@@ -94,7 +90,7 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 			}
 			if (pressed != newPressed) {
 				pressed = newPressed;
-				slider.repaint(thumbRect);
+				slider.repaint(lowerThumbRect);
 				slider.repaint(upperThumbRect);
 			}
 		}
@@ -107,7 +103,7 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 			}
 			if (rolloverLower != newRolloverLower) {
 				rolloverLower = newRolloverLower;
-				slider.repaint(thumbRect);
+				slider.repaint(lowerThumbRect);
 			}
 			if (rolloverUpper != newRolloverUpper) {
 				rolloverUpper = newRolloverUpper;
@@ -117,7 +113,7 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 	}
 
 	@Override
-	public void paintTrack(Graphics g) {
+	protected void paintTrack(Graphics g) {
 		XPStyle xp = XPStyle.getXP();
 		if (xp != null) {
 			boolean vertical = (slider.getOrientation() == JSlider.VERTICAL);
@@ -186,17 +182,16 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 	}
 
 	@Override
-	public void paintThumb(Graphics g) {
+	protected void paintThumb(Graphics g, boolean isLower) {
 		XPStyle xp = XPStyle.getXP();
 		if (xp != null) {
-			Object part = getXPThumbPart();
 			String stateName = "NORMAL";
 
-			if (upperThumbSelected == paintingUpperThumb) {
+			if (isLower == lowerThumbSelected) {
 				if (slider.hasFocus()) {
 					stateName = "FOCUSED";
 				}
-				if (paintingUpperThumb ? rolloverUpper : rolloverLower) {
+				if (isLower ? rolloverLower : rolloverUpper) {
 					stateName = "HOT";
 				}
 				if (pressed) {
@@ -204,7 +199,7 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 				}
 			} else {
 				if (!pressed) {
-					if (paintingUpperThumb ? rolloverUpper : rolloverLower) {
+					if (isLower ? rolloverLower : rolloverUpper) {
 						stateName = "HOT";
 					}
 				}
@@ -212,11 +207,12 @@ public class WindowsRangeSliderUI extends BasicRangeSliderUI {
 			if (!slider.isEnabled()) {
 				stateName = "DISABLED";
 			}
-
-			xp.getSkin(slider, part).paintSkin(g, thumbRect.x, thumbRect.y,
+			Object part = getXPThumbPart();
+			Rectangle rect = isLower ? lowerThumbRect : upperThumbRect;
+			xp.getSkin(slider, part).paintSkin(g, rect.x, rect.y,
 					accessTMSchema("State", stateName));
 		} else {
-			super.paintThumb(g);
+			super.paintThumb(g, isLower);
 		}
 	}
 
