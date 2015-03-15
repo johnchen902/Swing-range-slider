@@ -44,22 +44,27 @@ public class MotifRangeSliderUI extends BasicRangeSliderUI {
 		return new MotifRangeSliderUI();
 	}
 
+	@Override
 	protected Dimension getPreferredHorizontalSize() {
 		return PREFERRED_HORIZONTAL_SIZE;
 	}
 
+	@Override
 	protected Dimension getPreferredVerticalSize() {
 		return PREFERRED_VERTICAL_SIZE;
 	}
 
+	@Override
 	protected Dimension getMinimumHorizontalSize() {
 		return MINIMUM_HORIZONTAL_SIZE;
 	}
 
+	@Override
 	protected Dimension getMinimumVerticalSize() {
 		return MINIMUM_VERTICAL_SIZE;
 	}
 
+	@Override
 	protected Dimension getThumbSize() {
 		if (slider.getOrientation() == JSlider.HORIZONTAL) {
 			return new Dimension(30 + 2, 15 + 2);
@@ -68,12 +73,15 @@ public class MotifRangeSliderUI extends BasicRangeSliderUI {
 		}
 	}
 
+	@Override
 	protected void paintFocus(Graphics g) {
 	}
 
+	@Override
 	protected void paintTrack(Graphics g) {
 	}
 
+	@Override
 	protected void paintThumb(Graphics g, boolean isLower) {
 		Rectangle knobBounds = isLower ? lowerThumbRect : upperThumbRect;
 
